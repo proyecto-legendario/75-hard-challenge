@@ -1,0 +1,112 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Orchestrator is the default primary agent; it plans and delegates.
+  // Root model cannot keep a #variant. Agent entries below select variants.
+  "model": "opencode-go/glm-5.3",
+  "default_agent": "orchestrator",
+
+  "agents": {
+    "orchestrator": {
+      "description": "Plans work, splits it across subagents, integrates results",
+      "mode": "primary",
+      "model": "opencode-go/glm-5.3#high",
+      "steps": 25,
+      "color": "#7c6cf0",
+      "system": "{file:prompts/orchestrator.md}",
+      "permissions": [
+        // Only read-only agents are launched before the user approves the spec;
+        // the planning gate itself is prompt-level, permissions are static.
+        { "action": "subagent", "resource": "*", "effect": "allow" },
+        { "action": "subagent", "resource": "general", "effect": "deny" },
+        { "action": "shell", "resource": "git push *", "effect": "ask" },
+        { "action": "shell", "resource": "git reset --hard *", "effect": "ask" },
+        { "action": "shell", "resource": "git clean *", "effect": "ask" },
+        { "action": "shell", "resource": "rm -rf *", "effect": "deny" },
+        { "action": "shell", "resource": "sudo *", "effect": "deny" }
+      ]
+    },
+
+    "locator": {
+      "description": "Read-only code search: returns path:line citations and short explanations",
+      "mode": "subagent",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 8,
+      "color": "#5b8def",
+      "system": "{file:prompts/locator.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "read", "resource": "*.env.example", "effect": "allow" },
+        { "action": "question", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    "builder": {
+      "description": "Implements feature and fix edits in src/ and docs/plans checkboxes",
+      "mode": "subagent",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 20,
+      "color": "#2fa36b",
+      "system": "{file:prompts/builder.md}",
+      "permissions": [
+        { "action": "edit", "resource": "**", "effect": "deny" },
+        { "action": "edit", "resource": "src/**", "effect": "allow" },
+        { "action": "edit", "resource": "docs/plans/**", "effect": "allow" },
+        { "action": "edit", "resource": "e2e/**", "effect": "allow" },
+        { "action": "shell", "resource": "git push *", "effect": "deny" },
+        { "action": "shell", "resource": "rm -rf *", "effect": "deny" },
+        { "action": "shell", "resource": "sudo *", "effect": "deny" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "read", "resource": "*.env.example", "effect": "allow" },
+        { "action": "question", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    "reviewer": {
+      "description": "Reviews diffs for correctness, regressions and invariant violations",
+      "mode": "subagent",
+      "model": "opencode-go/gpt-6-luna#high",
+      "steps": 20,
+      "color": "#e05252",
+      "system": "{file:prompts/reviewer.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "read", "resource": "*.env.example", "effect": "allow" },
+        { "action": "question", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    "explore": {
+      "model": "opencode-go/qwen3.8-flash#low",
+      "permissions": [
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "read", "resource": "*.env.example", "effect": "allow" },
+        { "action": "question", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    "general": {
+      "model": "opencode-go/minimax-m3.1-flash#medium",
+      "permissions": [
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "read", "resource": "*.env.example", "effect": "allow" },
+        { "action": "question", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    // Hidden built-in. Replaces V1 small_model for session titles.
+    "title": {
+      "model": "opencode-go/mimo-v2.6-flash"
+    }
+  }
+}
