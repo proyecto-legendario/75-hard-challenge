@@ -6,6 +6,14 @@ as placeholders.
 
 **Active plan:** [`docs/plans/001-provisioning.md`](./docs/plans/001-provisioning.md) — done. No plan in progress; the next plan takes `002-`.
 
+## Plan management
+
+Plans in this repo are managed through **cerebro** (`~/Documents/Projects/cerebro`,
+the org plan dashboard). Keep cerebro open (`npm run dev` inside it) to view,
+discuss and update plans; its chat and comments run through the local opencode
+service. Direct edits to `docs/plans/*.md` are fine, but review and status
+tracking happen in cerebro.
+
 ## Commands
 
 TBD (stack). Record the dev/build/lint commands here when the stack lands.
